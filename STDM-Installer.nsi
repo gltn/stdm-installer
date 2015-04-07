@@ -1,6 +1,6 @@
 ;--------------------------------------------------------------------------
 ;    STDM-Installer.nsi - Windows Installer for PostgreSQL , PostGIS and
-;						  QGIS 2.2 for STDM.
+;						  QGIS 2.4 for STDM.
 ;    ---------------------
 ;    Date                 : June 2014
 ;    Copyright            : (C) 2014 by UN-Habitat and implementing partners
@@ -21,7 +21,7 @@ SetCompressor lzma
 RequestExecutionLevel admin
 
 # General Symbol Definitions
-!define VERSION "1.0 RC"
+!define VERSION "1.0 Final"
 !define COMPANY "Global Land Tool Network"
 !define URL www.stdm.gltn.net
 
@@ -51,28 +51,29 @@ Page custom dbConnPropPage dbConnPropPageLeave
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile STDM-1.0-RC-x86.exe
+OutFile STDM-1.0-Final-x86.exe
 InstallDir "$PROGRAMFILES\STDM"
 CRCCheck on
 XPStyle on
+BrandingText "Global Land Tool Network"
 ShowInstDetails show
-VIProductVersion 1.0.0.0
+VIProductVersion 1.0.1.0
 VIAddVersionKey ProductName "Social Tenure Domain Model"
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
 VIAddVersionKey CompanyWebsite "${URL}"
 VIAddVersionKey FileVersion "${VERSION}"
-VIAddVersionKey FileDescription "STDM 1.0 Release Copy"
+VIAddVersionKey FileDescription "STDM 1.0 Final"
 VIAddVersionKey LegalCopyright ""
 ShowUninstDetails show
 
 ; Place all temporary files used by the installer in their own subdirectory under $TEMP (makes the files easier to find)
 !define TEMPDIR "$PLUGINSDIR\stdm_installer"
 
-;Define the version of PostgreSQL that we are going to use
+; Define the version of PostgreSQL that we are going to use
 !define POSTGRESQL_9.2 1
 
-;Change GUID for different platforms i.e x86 and x86_64
+; Change GUID for different platforms i.e x86 and x86_64
 !ifdef POSTGRESQL_9.2
 	!define PG_VERSION "9.2"
 	!define PG_VERSION_DISPLAY "PostgreSQL 9.2"
@@ -82,9 +83,9 @@ ShowUninstDetails show
 
 !define POSTGIS_VERSION "2.1"
 
-!define QGIS_VERSION "QGIS 2.2 for STDM"
+!define QGIS_VERSION "QGIS Chugiak (2.4.0) for STDM"
 
-;Custom UI for database connection
+; Custom UI for database connection
 Var Dialog
 Var userNameLbl
 Var userNameTxt
@@ -103,6 +104,10 @@ Var password
 Var port
 Var dbName
 
+#Postgres registry settings
+Var pg_reg_user
+Var pg_reg_port
+
 ;PostgreSQL install option
 Var PG_INSTALL_OPTIONS
 
@@ -110,9 +115,12 @@ Function .onInit
     InitPluginsDir 
     StrCpy $userName "postgres"   
     StrCpy $password ""
-    StrCpy $port "5434"
+    StrCpy $port "5433"
     StrCpy $dbName "stdm"
     StrCpy $PG_INSTALL_OPTIONS ""
+	
+	#Default pg registry options
+	StrCpy $pg_reg_user ""
     
 FunctionEnd
 
@@ -130,7 +138,7 @@ Section "PostGIS 2.1" SecPostGIS
     Call InstallPostGIS
 SectionEnd
 
-Section "QGIS 2.2 for STDM" SecQGIS
+Section "QGIS Chugiak 2.4.0 for STDM" SecQGIS
     Call InstallQGIS
 SectionEnd
 
@@ -163,7 +171,7 @@ Function dbConnPropPage
     ${NSD_CreateText} 132 38 60% 20 $userName
     Pop $userNameTxt
     #Disable control so that the user does not change the postgres service account
-    EnableWindow $userNameTxt 0
+    #EnableWindow $userNameTxt 0
     
     ${NSD_CreateLabel} 40 68 80 20 "Password:"
     Pop $passLbl
@@ -177,7 +185,7 @@ Function dbConnPropPage
     ${NSD_CreateText} 132 98 60% 20 $port
     Pop $portTxt
     #Disable control so that the user does not change the postgres port number
-    EnableWindow $portTxt 0
+    #EnableWindow $portTxt 0
     
     ${NSD_CreateLabel} 40 128 80 20 "Database Name:"
     Pop $dbNameLbl
@@ -187,7 +195,7 @@ Function dbConnPropPage
     #Disable control so that the user does not change the name of the STDM database
     EnableWindow $dbNameTxt 0
     
-    ${NSD_CreateLabel} 40 163 85% 40 "Please take note of these values as they will be required for configuring STDM upon first-time use."
+    ${NSD_CreateLabel} 40 163 85% 40 "Please take note of these values as they will be required for configuring STDM on using it for the first time."
     Pop $notificationLbl
     SetCtlColors $notificationLbl "0x0000FF" transparent
     
@@ -198,23 +206,58 @@ Function dbConnPropPage
     
 FunctionEnd
 
-; Save control state
-Function dbConnPropPageLeave
-    #We are only interested in the password since the rest of the parameters are fixed
-    ${NSD_GetText} $passTxt $password
+; Set the PostgreSQL username if there is an existing installation 
+Function PostgresRegUserName
+    ReadRegStr $pg_reg_user HKLM "Software\PostgreSQL\Installations\${PG_GUID}" "Super User"
     
 FunctionEnd
 
-;Copy postgresql installer into temp directory and execute with the specified options
+; Validate entries
+Function dbConnPropPageLeave
+	${NSD_GetText} $userNameTxt $userName
+	${If} $userName == ""
+		MessageBox MB_OK|MB_ICONSTOP "Please specify the postgres user account name.$\nYou can use 'postgres' as the default."
+        Abort
+    ${EndIf}
+	
+    ${NSD_GetText} $passTxt $password
+	${If} $password == ""
+		MessageBox MB_OK|MB_ICONSTOP "Please enter password for the postgres account"
+        Abort
+    ${EndIf}
+	
+	${NSD_GetText} $portTxt $port
+	${If} $port == ""
+		MessageBox MB_OK|MB_ICONSTOP "Please enter the database port number"
+        Abort
+    ${EndIf}
+	
+	Call PostgresRegUserName
+	${If} $pg_reg_user == $userName
+		MessageBox MB_YESNO|MB_ICONEXCLAMATION "The installer has detected an existing copy of PostgreSQL.\
+		$\nYou can either de-select installing PostgreSQL in the components page or ensure that the specified database connection properties match \
+		those of the existing PostgreSQL installation.$\nProceed with the installation?" IDYES next IDNO no_abort
+    ${Else}
+		Goto next
+	${EndIf}
+	
+	no_abort:
+		Abort
+		
+	next:
+    
+FunctionEnd
+
+; Copy postgresql installer into temp directory and execute with the specified options
 Function InstallPostgreSQL
     ;Specify PostgreSQL options for unattended mode installation 
     StrCpy $PG_INSTALL_OPTIONS "--mode unattended --superaccount $userName --superpassword $password --serviceaccount $userName  --servicepassword $password --serverport $port"
 
-    #Create batch file for executing postgresl in unattended mode
     File "Installers\postgresql-9.2.8-3.exe"
-    
+	
+	#Create batch file for executing postgresl in unattended mode    
     FileOpen $1 "${TEMPDIR}\install_postgresql.bat" "w"
-    FileWrite $1 '"${TEMPDIR}\postgresql-9.2.8-3.exe" $PG_INSTALL_OPTIONS 2> "${TEMPDIR}\install_postgres_error.txt"$\r$\n'
+    FileWrite $1 '"${TEMPDIR}\postgresql-9.2.exe" $PG_INSTALL_OPTIONS 2> "${TEMPDIR}\install_postgres_error.txt"$\r$\n'
     FileWrite $1 "exit %ERRORLEVEL%$\r$\n"
     FileClose $1
     
@@ -241,7 +284,7 @@ Function InstallPostGIS
     File "Installers\postgis-2.1.3-1.exe"
     
     FileOpen $3 "${TEMPDIR}\install_postgis.bat" "w"
-    FileWrite $3 '"${TEMPDIR}\postgis-2.1.3-1.exe" /S /USERNAME=$userName /PASSWORD=$password /PORT=$port 2> "${TEMPDIR}\install_postgis_error.txt"$\r$\n'
+    FileWrite $3 '"${TEMPDIR}\postgis-2.1.exe" /S /USERNAME=$userName /PASSWORD=$password /PORT=$port 2> "${TEMPDIR}\install_postgis_error.txt"$\r$\n'
     FileWrite $3 "exit %ERRORLEVEL%$\r$\n"
     FileClose $3
     
@@ -263,12 +306,12 @@ Function InstallPostGIS
         
 FunctionEnd
 
-; Silent install QGIS 2.2 for STDM
+; Silent install QGIS 2.4 for STDM
 Function InstallQGIS
-    File "Installers\QGIS-STDM-2.2.0-1-Setup-x86.exe"
+    File "Installers\QGIS-STDM-2.4.0-Setup-x86.exe"
     
     FileOpen $9 "${TEMPDIR}\install_qgis.bat" "w"
-    FileWrite $9 '"${TEMPDIR}\QGIS-STDM-2.2.0-1-Setup-x86.exe" /S 2> "${TEMPDIR}\install_qgis_error.txt"$\r$\n'
+    FileWrite $9 '"${TEMPDIR}\QGIS-STDM-2.4.0-Setup-x86.exe" /S 2> "${TEMPDIR}\install_qgis_error.txt"$\r$\n'
     FileWrite $9 "exit %ERRORLEVEL%$\r$\n"
     FileClose $9
     
@@ -279,7 +322,7 @@ Function InstallQGIS
     ; If PostGIS installer returned non-zero then an error occurred
     IntCmp $R0 0 qgis_install_success
     
-    #PostGIS installation failed. Provide feedback to user
+    #QGIS installation failed. Provide feedback to user
     StrCpy $7 "QGIS installation failed."
     StrCpy $8 "${TEMPDIR}\install_qgis_error.txt"
     Call AbortDisplayLogOption
@@ -310,12 +353,12 @@ Function CheckPostgresql
     ${Else}
 		DetailPrint "An existing ${PG_VERSION_DISPLAY} installation found,"
 		DetailPrint "Setup will skip ${PG_VERSION_DISPLAY} installation."
-        MessageBox MB_OK|MB_ICONEXCLAMATION "${PG_VERSION_DISPLAY} is already installed in your system, this part will be skipped." 
+        MessageBox MB_OK|MB_ICONEXCLAMATION "${PG_VERSION_DISPLAY} is already installed in your system, its installation will be skipped." 
     ${EndIf}
     
 FunctionEnd
 
-#Create STDM database 
+; Create STDM database 
 Function CreateSTDMDatabase
     #Set path to PostgreSQL base directory
     Call SetPostgreSQLBaseDirectory
@@ -329,7 +372,7 @@ Function CreateSTDMDatabase
     FileWrite $5 "exit %ERRORLEVEL%$\r$\n"
     FileClose $5
     
-    DetailPrint "Creating STDM spatial database..."
+    DetailPrint "Creating STDM template database..."
     ExecDos::exec '"$SYSDIR\cmd.exe" /c "${TEMPDIR}\create_stdm_db.bat"'
     Pop $6
     
@@ -341,7 +384,7 @@ Function CreateSTDMDatabase
     Call AbortDisplayLogOption
     
     create_stdm_template_db_success:
-        DetailPrint "STDM spatial database has been successfully created!"
+        DetailPrint "STDM template database has been successfully created!"
         return
     
 FunctionEnd
@@ -365,9 +408,9 @@ Function AbortDisplayLogOption
     
 FunctionEnd
 
-;Installer Section Descriptions
+; Installer Section Descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecQGIS} "Install QGIS Valmiera 2.2 for STDM"
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecQGIS} "Install QGIS Chiguak 2.4.0 for STDM"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecPostgreSQL} "Install PostgreSQL 9.2 for Windows 32-bit"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecPostGIS} "Install PostGIS 2.1 for Windows 32-bit"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END

@@ -14,8 +14,7 @@ The following default options have been used if PostgreSQL and PostGIS component
  1. Nullsoft Scriptable Install System - available here: [NSIS](http://nsis.sourceforge.net/Main_Page)
  2. Individual PostgreSQL, PostGIS and QGIS installers
 
-**Support**
-You can get support in the following ways:
+**Support** - You can get support in the following ways:
 
  1. Joining the stdm-dev mailing list at: [http://lists.osgeo.org/cgi-bin/mailman/listinfo/stdm-dev](http://lists.osgeo.org/cgi-bin/mailman/listinfo/stdm-dev)
  2. Signing up on GitHub and posting a new issue at: [https://github.com/gltn/stdm-installer/issues/new](https://github.com/gltn/stdm-installer/issues/new)

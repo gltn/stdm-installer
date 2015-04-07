@@ -1,0 +1,1 @@
+Copy individual PostgreSQL, PostGIS and QGIS installers into this folder.

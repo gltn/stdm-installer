@@ -7,7 +7,7 @@ An NSIS script that packages PostgreSQL v9.5, PostGIS v2.2 and a custom-build of
 
 The following default connection properties have been used for PostgreSQL and PostGIS component selections:
 * Username = postgres
-* Port = 5434
+* Port = 5433
 * STDM spatial database name = stdm
 
 **Prerequisites:**

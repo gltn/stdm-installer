@@ -1,9 +1,9 @@
 STDM Stand-Alone Installer
 =======================
 
-An NSIS script that packages PostgreSQL v9.2, PostGIS v2.1 and a custom-build of QGIS v2.4 (for STDM) into a single x86 Windows installer. The installer provides the user with the option of selecting which components to install and set the connection parameters of the STDM database if PostgreSQL and/or PostGIS components are selected.
+An NSIS script that packages PostgreSQL v9.5, PostGIS v2.2 and a custom-build of QGIS v2.18 (for STDM) into a single x86 Windows installer. The installer provides the user with the option of selecting which components to install and set the connection parameters of the STDM database if PostgreSQL and/or PostGIS components are selected.
 
-***Note:*** This repository does not contain the individual installer packages of PostgreSQL, PostGIS and QGIS; these will be required when compiling the script. To include them, copy them into the 'Installers' directory while ensuring that the individual package file names are *postgresql-9.2.exe, postgis-2.1.exe* and *QGIS-STDM-2.4.0-Setup-x86.exe*, corresponding to PostgreSQL, PostGIS and QGIS respectively. However, these file name references can be directly edited in the script.
+***Note:*** This repository does not contain the individual installer packages of PostgreSQL, PostGIS and QGIS; these will be required when compiling the script. To include them, copy them into the 'Installers' directory while ensuring that the individual package file names are *postgresql-9.5.exe, postgis-2.2.exe* and *STDM-QGIS-2-18-Setup-x86_64.exe*, corresponding to PostgreSQL, PostGIS and QGIS respectively. However, these file name references can be directly edited in the script.
 
 The following default connection properties have been used for PostgreSQL and PostGIS component selections:
 * Username = postgres

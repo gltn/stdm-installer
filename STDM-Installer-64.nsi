@@ -289,11 +289,6 @@ LicenseLangString license ${LANG_FRENCH} "..\common\license_fr.rtf"
 LicenseLangString license ${LANG_PORTUGUESE} "..\common\license_pt.rtf"
 # Installer pages
 
-; Define the version of PostgreSQL that we are going to use
-#!insertmacro MUI_LANGUAGE "English" 
-#!insertmacro MUI_LANGUAGE "French"
-#!insertmacro MUI_LANGUAGE "Portuguese"
-
 
 !define GetCompName 
 !macro GetCompName COMPNAME

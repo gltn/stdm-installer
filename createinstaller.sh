@@ -22,6 +22,16 @@ function inc_build_count()
     sed -i -e "s/\(INSTALLER_VER=\).*/\1$1/" "$2"
 }
 
+function deploy_to_repo()
+{
+    # copies installer scripts to stdm-installer repo
+    # - STDM-Installer-64.nsi
+    # - createinstaller.sh
+    echo "Copying installer files to repo ..."
+    cp -v STDM-Installer-64.nsi ../stdm-installer/
+    cp -v createinstaller.sh ../stdm-installer/
+}
+
 #############################################################################
 #
 # Main Body
@@ -31,17 +41,34 @@ function inc_build_count()
 # Globals
 ARCH=""
 QGIS_VER=""
-ODE_NAME=""
+DEPLOY_ONLY="false"
+LIVE_BUILD="false"
 
 # check command line arguments
-while getopts "f:" opt; do
+while getopts "f:d:l:" opt; do
+    echo "***** $opt ****"
+    echo "***** $OPTARG ****"
     case $opt in
        f) CONFIG_FILE="$OPTARG"
+       ;;
+       d) DEPLOY_ONLY="$OPTARG"
+       ;;
+       d) LIVE_BUILD="$OPTARG"
        ;;
        \?) echo "Invalid option  - $OPTARG" >&2
        ;;
     esac
 done
+
+if [ "$DEPLOY_ONLY" = "true" ]; then
+    deploy_to_repo
+    exit 1
+fi
+
+if [ -z "$CONFIG_FILE" ]; then
+    echo "Config file not found!"
+    exit 1
+fi
 
 # Read the config file
 . $CONFIG_FILE
@@ -103,6 +130,12 @@ QGIS_VER_LABEL="$MAJOR-$MINOR"
 
 QGIS_EXE="STDM-QGIS-${QGIS_VER_LABEL}-Setup-${ARCH}.exe"
 
+if [ "$LIVE_BUILD" = "true" ]; then
+    ARG16=-DLIVE="${LIVE_BUILD}" 
+else
+    ARG16=""
+fi
+
 /c/PROGRA~2/NSIS/Unicode/makensis \
     -DSTDM_VERSION="${STDM_VER}" \
     -DPG_VERSION="${PG_VER}" \
@@ -119,7 +152,10 @@ QGIS_EXE="STDM-QGIS-${QGIS_VER_LABEL}-Setup-${ARCH}.exe"
     -DSTDM_SAMPLE_DATA="stdm_sample.backup" \
     -DSETUP_FILENAME="STDM-${STDM_VER} Final-${ARCH}_${COUNT}.exe" \
     -V4 \
-    -DLIVE="TRUE" \
+    $ARG16 \
     STDM-Installer-64.nsi
 
+# copy installer script to repo folder
+deploy_to_repo
 
+#-DLIVE_BUILD="${LIVE_BUILD}" \

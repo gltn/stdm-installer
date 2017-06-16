@@ -469,17 +469,17 @@ Function check_disk_space
 FunctionEnd
 
 Function .onSelChange
-    ${IfNot} ${SectionIsSelected} ${SecQGIS}
-       Goto disable
-    ${Else}
-       Goto enable
-    ${EndIf}
+    ;${IfNot} ${SectionIsSelected} ${SecQGIS}
+    ;   Goto disable
+    ;${Else}
+    ;   Goto enable
+    ;${EndIf}
 
     ; postgis is selected but postgres is not!
-    ${IfNot} ${SectionIsSelected} ${SecPostgreSQL}
-    ${AndIf} ${SectionIsSelected} ${SecPostGIS}
-       Goto disable
-    ${EndIf}
+    ;${IfNot} ${SectionIsSelected} ${SecPostgreSQL}
+    ;${AndIf} ${SectionIsSelected} ${SecPostGIS}
+    ;   Goto disable
+    ;${EndIf}
 
     ${IfNot} ${SectionIsSelected} ${SecQGIS}
     ${AndIfNot} ${SectionIsSelected} ${SecPostgreSQL}
@@ -699,13 +699,14 @@ FunctionEnd
 Function InstallQGIS 
      ; if postgres is selected for installation, check pre-existing postgres
      ; installation abort before installing anything
-     ${If} ${SectionIsSelected} ${SecPostgreSQL}
+     ; ${If} ${SectionIsSelected} ${SecPostgreSQL}
+     ;
         Call CheckPostgresql
         ${IF} $pg_found == "yes"
         ${ELSE}
         ${ENDIF}
         
-     ${EndIf}
+     ; ${EndIf}
 
      File "${INSTALLERS_DIR}\${QGIS}"
     

@@ -1,9 +1,20 @@
 # createinstaller.sh
 #
 # Usage: 
-# ./createinstaller.sh -f <config_file>
+# ./createinstaller.sh -f <config_file> -d <arg> -l <arg>
+# 
+# -d [arg]       : Set to 'true' if you just want to copy installer scripts
+#                  to stdm-installer repo folder without creating the installation file.
+#                  This parameter is optional, if you don't pass this parameter, the
+#                  installer file will be created and scripts will be copied to stdm-installer repo.
+# posible values :'true' or 'false' or nothing.
 #
-###################################################################################
+# -l [arg]       : By default createintaller.sh will generate a test installer executable. This executable
+#                  does not have any installation files (QGIS, Postgres, Postgis or STDM), it is an empty
+#                  installtion executable meant for testing the setup. 
+#                  To create a 'Live' installation executable pass this parameter with an argument 'true'
+#
+##############################################################################################################
 
 function verify_setting()
 {
@@ -46,14 +57,12 @@ LIVE_BUILD="false"
 
 # check command line arguments
 while getopts "f:d:l:" opt; do
-    echo "***** $opt ****"
-    echo "***** $OPTARG ****"
     case $opt in
        f) CONFIG_FILE="$OPTARG"
        ;;
        d) DEPLOY_ONLY="$OPTARG"
        ;;
-       d) LIVE_BUILD="$OPTARG"
+       l) LIVE_BUILD="$OPTARG"
        ;;
        \?) echo "Invalid option  - $OPTARG" >&2
        ;;
@@ -155,7 +164,6 @@ fi
     $ARG16 \
     STDM-Installer-64.nsi
 
-# copy installer script to repo folder
+# copy installer scripts to repo folder
 deploy_to_repo
 
-#-DLIVE_BUILD="${LIVE_BUILD}" \
